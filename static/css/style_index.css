@@ -1,0 +1,467 @@
+
+/* ------------------------- */
+/*       Main Elements       */
+/* ------------------------- */
+
+body {
+    font-family: "Poppins", sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#main-map {
+    position: absolute;
+    top: 3%; /* Adjusted to leave room above the map */
+    right: 0;
+    bottom: 0; /* Adjusted to leave room below the map */
+    left: 0;
+    z-index: 1;
+}
+
+
+#trigger,
+#openModal {
+    position: fixed;
+    width: 30px;
+    height: 30px;
+    font-size: 20px; /* Increase the font size */
+    background-color: #023047; /* Cool and elegant color */
+    color: #fff;
+    text-align: center;
+    line-height: 30px;
+    cursor: pointer;
+    z-index: 3;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4); /* Bigger shadow with a slightly lighter color */
+    padding: 5px; /* Add padding for better fit */
+}
+
+#trigger {
+    top: 35px; /* Adjusted for better positioning */
+    right: 15px; /* Adjusted for better positioning */
+}
+
+#openModal {
+    top: 90px;
+    right: 15px; /* Adjusted for better positioning */
+}
+
+#content {
+    margin-right: 300px; /* Adjust this value to match the width of your sidebar */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* ------------------------- */
+/*          Sidebar          */
+/* ------------------------- */
+
+#sidebar {
+    font-family: "Poppins", sans-serif;
+    position: fixed;
+    top: 0;
+    right: -300px; /* Initially hidden on the right side */
+    width: 300px;
+    height: 100%;
+    background-color: #333;
+    color: #fff;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    transition: right 0.3s ease; /* Smooth transition effect for right property */
+    z-index: 3; /* Ensure the sidebar is above the map */
+}
+
+#sidebar:hover {
+    right: 0; /* Expand on hover to the right */
+}
+
+#sidebar button {
+    display: block;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #555;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+/* ------------------------- */
+/*       Popup Elements      */
+/* ------------------------- */
+
+.mapboxgl-popup {
+    width: 220px;
+    position: absolute;
+    text-align: left;
+    font-family: "Poppins", sans-serif;
+    color: #333; /* Text color */
+    z-index: 2;
+}
+
+/* "x" button to close popup */
+.mapboxgl-popup button.mapboxgl-popup-close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #03549a; /* Blue background for close button */
+    color: #fff; /* White text color */
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.update-input-fields-button {
+    background-color: #03549a; /* Updated color */
+    color: white; /* White text color */
+    padding: 5px 10px; /* Smaller padding */
+    border: none; /* No border */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Cursor on hover */
+    font-size: 9px; /* Smaller font size */
+    transition: background-color 0.3s ease; /* Smooth transition effect for background color */
+    float: right; /* Right-align the button */
+    margin-top: 5px; /* Optional margin for better spacing */
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+    /* ------------------------- */
+    /*    Typography & Colors    */
+    /* ------------------------- */
+
+        .mapboxgl-popup h2 {
+            font-size: 16px; /* Larger heading size */
+            margin-bottom: 10px;
+            color: #03549a; /* Blue heading color */
+            z-index: 2;
+        }
+
+        .mapboxgl-popup p {
+            font-size: 14px; /* Slightly larger text size */
+            margin: 5px 0;
+            line-height: 1.4;
+            color: #555; /* Dark gray text color */
+            z-index: 2;
+        }
+
+        .mapboxgl-popup m {
+            font-size: 14px;
+            margin: 5px 0;
+            line-height: 1.4;
+            color: #555; /* Dark gray text color */
+            z-index: 2;
+        }
+
+/* ------------------------- */
+/*       Box Elements        */
+/* ------------------------- */
+
+#NewMeasureBox {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 90%;
+    max-width: 400px;
+    max-height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    z-index: 4;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+
+}
+
+#infoBox {
+    display: none;
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    width: 80%;
+    height: 100%;
+    max-width: 400px;
+    max-height: 250px;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    z-index: 1;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+
+#infoBox p {
+    font-size: 10px;
+}
+
+/* shadow layer */
+#shadowLayer {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+    z-index: 3; /* Ensure the shadow layer is between the new measure box and other elements */
+}
+
+/* "x" button to box */
+#closeButton,
+#closeButton button.mapboxgl-popup-close-button,
+#closeButton #NewMeasureBox button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #03549a; /* Blue background for close button */
+    color: #fff; /* White text color */
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* ------------------------- */
+/*       Form Elements       */
+/* ------------------------- */
+
+#formRow {
+    max-width: 90%;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="text"], input[type="datetime-local"], input[type="tel"], select {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#NewMeasureBox button#fillCurrentTime, #NewMeasureBox button#editPlaceButton,
+#NewMeasureBox button#getCurrentLocationButton, #NewMeasureBox button#showMapButton {
+    padding: 5px;
+    width: 150px;
+    background-color: #555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#NewMeasureBox button#fillCurrentTime:hover, #NewMeasureBox button#editPlaceButton:hover,
+#NewMeasureBox button#getCurrentLocationButton:hover, #NewMeasureBox button#showMapButton:hover {
+    background-color: #4975ba;
+}
+
+.alert {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 4px;
+}
+
+input[type="submit"] {
+    display: block;
+    margin: auto; /* Center the button */
+    background-color: #4CAF50; /* Green background color */
+    color: white; /* White text color */
+    padding: 12px 20px; /* Padding for better visual appearance */
+    border: none; /* Remove default border */
+    border-radius: 5px; /* Add some border-radius for rounded corners */
+    cursor: pointer; /* Add a pointer cursor on hover */
+    font-size: 12px; /* Set font size */
+    transition: background-color 0.3s ease, transform 0.2s ease; /* Add a smooth transition for background color change and a slight scaling effect */
+}
+
+/* Change background color on hover for a visual feedback */
+input[type="submit"]:hover {
+    background-color: #45a049;
+    transform: scale(1.05); /* Scale up the button on hover */
+}
+
+/* ------------------------- */
+/*     Scrolling Top Bar     */
+/* ------------------------- */
+
+/* Style for the scrolling label container */
+.scrolling-label {
+    position: fixed; /* Lock the label at the top of the page */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2%; /* Set the height to 2% of the page */
+    white-space: nowrap; /* Prevent text from wrapping */
+    font-size: 10px; /* Increase the font size for a bigger label */
+    background-color: #fff; /* Background color for contrast */
+    padding: 5px; /* Add padding for better visibility */
+    z-index: 999; /* Ensure it's on top of other content */
+    overflow: hidden; /* Hide any overflowing text */
+}
+
+/* Style for the scrolling text */
+.scrolling-label p {
+    display: inline-block; /* Make it inline to scroll horizontally */
+    animation: scrollText 15s linear infinite; /* Adjust the animation duration as needed */
+    font-size: 12px; /* Adjust the font size as needed */
+    text-align: left;
+    margin-top: 0px;
+    margin-bottom: 0px; /* Remove margin to fully occupy the container height */
+    color: #6c7d9e; /* Example text color for differentiation */
+}
+
+/* Keyframes for the scrolling animation */
+@keyframes scrollText {
+    0% {
+        transform: translateX(500%); /* Start from the outside on the right side */
+    }
+    100% {
+        transform: translateX(-100%); /* Scroll to the left side */
+    }
+}
+
+/* Adjust keyframes for smaller screens */
+@media (max-width: 767px) {
+    .scrolling-label p {
+        animation: scrollTextSmall 10s linear infinite;
+    }
+
+    @keyframes scrollTextSmall {
+        0% {
+            transform: translateX(200%); /* Start from the middle on smaller screens */
+        }
+        100% {
+            transform: translateX(-100%); /* Scroll to the left side on smaller screens */
+        }
+    }
+}
+
+/* ------------------------- */
+/*      Intro Elements       */
+/* ------------------------- */
+
+/* Animation for fading in */
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+#background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 1); /* Opaque white background */
+    z-index: 9998; /* Ensure it's below the intro container */
+}
+
+
+#intro-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "Montserrat", sans-serif;
+    font-size: 3em;
+    font-weight: bold;
+    color: #3498db; /* Font color */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* Ensure it's on top of everything */
+    opacity: 0; /* Initially set opacity to 0 */
+    transition: opacity 0.8s ease; /* Fade-out transition */
+}
+
+#intro-content {
+    text-align: center;
+}
+
+#intro-container span {
+    display: inline-block;
+}
+
+#intro-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 6vw; /* Adjust the size based on your preference */
+    font-weight: bold;
+    color: #3498db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#intro-subtitle {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 3vw; /* Adjust the size based on your preference */
+    color: #555;
+    margin-top: 10px;
+    transition: opacity 0.8s ease;
+}
+
+#intro-description {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2vw; /* Adjust the size based on your preference */
+    color: #555;
+    margin-top: 10px;
+    transition: opacity 0.8s ease;
+}
+
+/* Additional styles for better responsiveness */
+@media (max-width: 768px) {
+    #intro-title {
+        font-size: 8vw; /* Adjust for smaller screens if needed */
+    }
+
+    #intro-subtitle {
+        font-size: 4vw; /* Adjust for smaller screens if needed */
+    }
+
+    #intro-description {
+        font-size: 3vw; /* Adjust for smaller screens if needed */
+    }
+}
+

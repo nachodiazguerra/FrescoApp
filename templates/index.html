@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Fresco</title>
+
+    <!-- CSS Style Sheet -->
+    <link rel="stylesheet" type="text/css" href="/static/css/style_index.css">
+
+    <!-- Library to set up Simple CSS -->
+    <link rel="stylesheet" href="https://picocss.com/pico.css">
+
+    <!-- Library to set up intro animation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.0/anime.min.js"></script>
+
+    <!-- Montserrat and Poppins fonts from Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins">
+
+    <!-- Mapbox GL JS -->
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet" />
+
+    <!-- Mapbox Geocoder -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.css" type="text/css" />
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-navigation/v0.35.0/mapbox-gl-navigation.min.js"></script>
+
+    <!-- Mapbox GL JS library -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css' rel='stylesheet' />
+
+    <!-- Mapbox GL Geocoding library -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.min.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.css' type='text/css' />
+
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+
+</head>
+
+<body>
+
+    <div id="background"></div>
+
+    <div id="intro-container">
+        <div id="intro-content">
+            <div id="intro-title"></div>
+            <div id="intro-subtitle">Conoce los niveles de CO2 en tu ciudad</div>
+            <div id="intro-description">Some info about how the page works</div>
+            {% if success_message %}
+            <div class="alert alert-success">
+                {{ success_message }}
+            </div>
+        {% endif %}
+        </div>
+
+    </div>
+
+    <div class="scrolling-label">
+        <p>400-700 Aceptable | 700-1200 Moderado | 1200+ Peligroso</p>
+    </div>
+
+    <div id="main-map"></div>
+
+    <div id="trigger">&#9662;</div>
+
+    <div id="openModal">&#8801;</div>
+
+    <div id="sidebar">
+
+        <h2>Bienvenido a Fresco</h2>
+        <p>Explora ubicaciones en Madrid y descubre los niveles de CO2 capturados en su interior.
+            Haz clic en los marcadores para obtener más información sobre cada lugar.</p>
+    </div>
+
+    <div id="database" style="display: none;">
+
+        {{ data | safe }}
+
+    </div>
+
+    <div id="NewMeasureBox">
+
+        <button id="closeButton">&times;</button>
+
+        <form method="POST" action="{{ url_for('home') }}">
+
+            <div class="form-group">
+                <label for="number">Medición</label>
+                <input type="tel" id="number" name="number" class="number-input" required
+                       onkeypress='return event.charCode >= 48 && event.charCode <= 57'
+                       placeholder="Solo lecturas superiores a 420ppm">
+            </div>
+
+            <div class="form-group">
+                <label for="status">Nivel de Ocupación</label>
+                <select id="status" name="status" required>
+                    <option value="vacío">Con sitio de sobra (Vacío)</option>
+                    <option value="moderado" selected>No está lleno, pero animado (Moderado)</option>
+                    <option value="lleno">Aquí no cabe un alfiler (Lleno)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="device">Dispositivo</label>
+                <input type="text" id="device" name="device">
+            </div>
+
+            <div class="form-group">
+                <label for="date">Fecha</label>
+                <div class="date-time-input-section">
+                    <input type="datetime-local" id="date" name="date" required>
+                    <button type="button" class="buttonStyle" id="fillCurrentTime" onclick="fillCurrentTime()">Ahora</button>
+                </div>
+            </div>
+
+            <div class="place-input-section">
+                <label for="place">Lugar</label>
+                <button type="button" class="buttonStyle" id="getCurrentLocationButton" onclick="updateLocation()">Ubicación Actual</button>
+                <button type="button" class="buttonStyle" id="showMapButton" onclick="showSecondMap()">Seleccionar en Mapa</button>
+                <input type="text" id="place" name="place" required readonly
+                       placeholder="Selecciona desde el mapa y edita si es necesario.">
+                <button type="button" class="buttonStyle" id="editPlaceButton" onclick="togglePlaceEdit()">Editar</button>
+                <p style="display: none;">Selecciona desde el mapa y edita si es necesario. </p>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Dirección</label>
+
+                <input type="text" id="address" name="address" required readonly
+                       placeholder="Se rellena automáticamente desde el mapa.">
+            </div>
+
+            <input type="submit" value="Añadir Medición">
+
+        </form>
+
+    </div>
+
+    <div id="infoBox" class="draggable">
+        <div class="place-input-section">
+            <label for="place">Seleciona en el mapa </label>
+            <input type="text" id="place2" name="place" readonly
+                   placeholder="Selecciona desde el mapa.">
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="address2" name="address" readonly
+                   placeholder="Se rellena automáticamente desde el mapa.">
+        </div>
+        <p >Podrás editar el nombre del lugar en la siguiente pantalla si no es el correcto. </p>
+        <button type="button" class="buttonStyle" id="confirmPlace" onclick="confirmAddress()">Confirmar</button>
+    </div>
+
+    <div id="shadowLayer"></div>
+
+    <!-------------------------->
+    <!--      JavaScript      -->
+    <!-------------------------->
+
+    <!-- Function for intro animation -->
+
+    <script>
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Function to animate the intro
+            function animateIntro() {
+                // Get the elements for the background, intro container, title, and subtitle
+                const background = document.getElementById("background");
+                const introContainer = document.getElementById("intro-container");
+                const introTitle = document.getElementById("intro-title");
+                const introSubtitle = document.getElementById("intro-subtitle");
+
+                // Set initial opacity for intro container and background
+                introContainer.style.opacity = 1;
+                background.style.opacity = 1;
+
+                // Create an array of characters for the word "Fresco"
+                const word = ["F", "r", "e", "s", "c", "o"];
+
+                // Create a span element for each character and append it to the title
+                word.forEach((char, index) => {
+                    const span = document.createElement("span");
+                    span.textContent = char;
+                    span.style.opacity = "0";
+                    span.style.animation = `fadeIn 0.8s ${index * 0.2}s forwards ease-in-out`;
+                    introTitle.appendChild(span);
+                });
+
+                // Set a timeout to fade out the intro container after 3 seconds
+                setTimeout(() => {
+                    introContainer.style.transition = "opacity 0.8s ease-in-out";
+                    introContainer.style.opacity = 0;
+                    background.style.transition = "opacity 0.8s ease-in-out";
+                    background.style.opacity = 0;
+                    // Remove the intro container when animation is complete
+                    setTimeout(() => {
+                        introContainer.parentNode.removeChild(introContainer);
+                        background.parentNode.removeChild(background);
+                    }, 800); // Duration of fade-out transition
+                }, 3000);
+
+                // Set a timeout to fade in the subtitle after a short delay
+                setTimeout(() => {
+                    introSubtitle.style.opacity = 1;
+                }, 1000); // Adjust the delay as needed
+            }
+
+            // Call the function to start the intro animation after the DOM has loaded
+            animateIntro();
+        });
+
+    </script>
+
+    <!-- Function to add a customized map with Mapbox -->
+
+    <script>
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZnJlc2NvYXBwIiwiYSI6ImNsZHB3b3d0djBiZjYzd256MXQxZmhvY3MifQ.cKt6kwgw3XWBu9-QzjoMHw';
+
+        function createGeocoderandZoom() {
+
+            // Add geocoder controls to the map
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                marker: { color: '#06c726' },
+                placeholder: 'Buscar', // Add this line to set the placeholder
+                mapboxgl: mapboxgl
+            });
+
+            map.addControl(geocoder, 'top-left');
+
+            // Add zoom controls to the map
+            const nav = new mapboxgl.NavigationControl({
+                visualizePitch: true,
+            });
+
+            map.addControl(nav, 'bottom-right');
+        }
+
+        function createMapInstance(center, zoom, containerId) {
+
+            // Initialize Mapbox map
+            var map = new mapboxgl.Map({
+                container: containerId,
+                style: 'mapbox://styles/mapbox/streets-v11',
+                center: center,
+                zoom: zoom
+            });
+
+            return map;
+            }
+
+        // Create Mapbox map instance with specific center and zoom
+        var map = createMapInstance([-3.7026, 40.4365], 13, 'main-map');
+        createGeocoderandZoom();
+
+    </script>
+
+    <!-- Functions to toggle Sidebar -->
+
+    <script>
+
+    // Toggle sidebar on trigger click
+    document.getElementById('trigger').addEventListener('click', function () {
+        var sidebar = document.getElementById('sidebar');
+        if (!sidebar) {
+            createSidebar();
+        }
+        sidebar.style.right = sidebar.style.right === '0px' ? '-300px' : '0px';
+    });
+
+    // Hide sidebar when clicking anywhere outside of it
+    document.addEventListener('click', function (event) {
+        var sidebar = document.getElementById('sidebar');
+        var trigger = document.getElementById('trigger');
+        if (sidebar && event.target !== sidebar && event.target !== trigger && !sidebar.contains(event.target) && !trigger.contains(event.target)) {
+            sidebar.style.right = '-300px';
+        }
+    });
+
+    </script>
+
+    <!-- Script for displaying the data from the locations dataframe into the main map. -->
+
+    <script>
+
+        function addMarkersToMap(map) {
+            // Ensure that the 'map' variable is accessible in this scope
+            var map;
+
+            // Get all tables with the specified class name
+            var tables = document.getElementsByClassName("dataframe table table-striped");
+
+            // Check if there is at least one table with the specified class
+            if (tables.length > 0) {
+
+                // Assume you want to access data from the first table with the class
+                var table = tables[0]; // You can modify this if you have multiple tables
+
+                // Get all rows in the table
+                var rows = table.getElementsByTagName("tr");
+
+                // ------------------------------------------- //
+
+                // Function to Customize the Popup:
+                function createCustomPopup(data) {
+
+                    // Create a popup content container
+                    const popupContent = document.createElement('div');
+
+                    // Create and customize the popup content
+                    const popupHeader = document.createElement('h2');
+                    popupHeader.textContent = data.location; // Customize the title here
+                    popupContent.appendChild(popupHeader);
+
+                    // Create a container for the measurements
+                    const measurementsContainer = document.createElement('div');
+                    measurementsContainer.classList.add('measurements-container');
+
+                    // Display the highest measurement with an icon
+                    const highestMeasurement = document.createElement('div');
+                    highestMeasurement.innerHTML = `<span class="measurement-icon">&#9650;</span> Máximo: ${data.max} ppm`;
+                    measurementsContainer.appendChild(highestMeasurement);
+
+                    // Display the latest measurement with an icon
+                    const latestMeasurement = document.createElement('div');
+                    latestMeasurement.innerHTML = `<span class="measurement-icon">&#9679;</span> Último: ${data.last} ppm`;
+                    measurementsContainer.appendChild(latestMeasurement);
+
+                    // Display the lowest measurement with an icon
+                    const lowestMeasurement = document.createElement('div');
+                    lowestMeasurement.innerHTML = `<span class="measurement-icon">&#9660;</span> Mínimo: ${data.min} ppm`;
+                    measurementsContainer.appendChild(lowestMeasurement);
+
+                    popupContent.appendChild(measurementsContainer);
+
+                    const popupFecha = document.createElement('p');
+                    popupFecha.textContent = 'Fecha: ' + data.fecha; // Customize the content here
+                    popupContent.appendChild(popupFecha);
+
+                    const popupTotal = document.createElement('p');
+                    popupTotal.textContent = 'mediciones #' + data.total; // Customize the content here
+                    popupContent.appendChild(popupTotal);
+
+                    // Add a button to the popup
+                    const addButton = document.createElement('button');
+                    addButton.textContent = 'Nueva medición';
+                    addButton.classList.add('update-input-fields-button'); // Add this line
+                    addButton.addEventListener('click', function () {
+                        updateInputFields(data.location, data.address, [data.longitude, data.latitude]);
+
+                        // Show NewMeasureBox and shadowLayer
+                        var NewMeasureBox = document.getElementById('NewMeasureBox');
+                        var shadowLayer = document.getElementById('shadowLayer');
+
+                        NewMeasureBox.style.display = 'block';
+                        shadowLayer.style.display = 'block';
+                    });
+
+                    popupContent.appendChild(addButton);
+
+
+                    // Create a new popup and set the content
+                    const customPopup = new mapboxgl.Popup({
+                        closeButton: true, // Remove the default close button
+                        anchor: 'bottom', // Position the popup above the marker
+                    })
+                        .setDOMContent(popupContent)
+                        .setMaxWidth('500px');
+
+                    return customPopup;
+                }
+
+                // ------------------------------------------- //
+
+                // Loop through the rows starting from index 1 to skip the header row
+                for (var i = 1; i < rows.length; i++) {
+                    var row = rows[i];
+
+                    // Get all cells in the row
+                    var cells = row.getElementsByTagName("td");
+
+                    // Check if there are at least 4 cells (assuming 0-based index)
+                    if (cells.length >= 4) {
+                        var Longitude = cells[0].textContent;
+                        var Latitude = cells[1].textContent;
+                        var Measurement = cells[4].textContent.split('], [').slice(-1)[0].replace(/\[|\]|'/g, '').split(', ')[0].trim();
+                        var HighestValue = cells[6].textContent;
+                        var LowestValue = cells[7].textContent;
+                        var Location = cells[2].textContent;
+                        var Address = cells[3].textContent;
+                        var TotalMeasurements = cells[5].textContent;
+                        var Fecha = cells[4].textContent.split('], [').slice(-1)[0].replace(/\[|\]|'/g, '').split(', ')[2].trim();
+
+                        // Data for the popup
+                        const popupData = {
+                            location: Location,
+                            address: Address,
+                            last: Measurement,
+                            max: HighestValue,
+                            min: LowestValue,
+                            fecha: Fecha,
+                            total: TotalMeasurements,
+                            longitude: Longitude,
+                            latitude: Latitude,
+                        };
+
+                        // Create a fixed marker at a specific location
+                        const fixedMarker = new mapboxgl.Marker({ color: '#219ebc', draggable: false })
+                            .setLngLat([Longitude, Latitude])
+                            .addTo(map); // Use 'map' instead of 'map1'
+
+                        // Create a popup using the custom function and data
+                        const fixedMarkerPopup = createCustomPopup(popupData);
+
+                        // Set a popup for the marker
+                        fixedMarker.setPopup(fixedMarkerPopup);
+
+                        // Open the popup when the marker is clicked
+                        fixedMarker.getElement().addEventListener('click', function () {
+                            fixedMarkerPopup.addTo(map);
+                        });
+                    }
+                }
+            }
+        }
+
+        // Ensure that the 'map' variable is accessible in this scope
+        var map;
+
+        // Call the function with the 'map' variable as an argument
+        addMarkersToMap(map);
+
+    </script>
+
+
+    <!-- Script to handle measurements box w/shadow layer  -->
+
+    <script>
+
+    // Script to handle the new measure box, close button, and shadow layer
+
+    document.getElementById('openModal').addEventListener('click', function() {
+        var NewMeasureBox = document.getElementById('NewMeasureBox');
+        var shadowLayer = document.getElementById('shadowLayer');
+
+        NewMeasureBox.style.display = 'block';
+        shadowLayer.style.display = 'block';
+
+        if (secondMapShown) {
+
+            var infoBox = document.getElementById('infoBox');
+            infoBox.style.display = 'none';
+
+            }
+    });
+
+    // Script to close the new measure box and shadow layer
+
+    function closeNewMeasureBox() {
+        var NewMeasureBox = document.getElementById('NewMeasureBox');
+        var shadowLayer = document.getElementById('shadowLayer');
+
+        NewMeasureBox.style.display = 'none';
+        shadowLayer.style.display = 'none';
+
+         if (secondMapShown) {
+
+            var infoBox = document.getElementById('infoBox');
+            infoBox.style.display = 'block';
+
+        }
+
+    }
+
+    // Script to handle the close button
+
+    document.getElementById('closeButton').addEventListener('click', function(event) {
+        closeNewMeasureBox();
+        event.stopPropagation(); // Prevent event propagation to the document
+    });
+
+    // Script to close the new measure box and shadow layer when clicked on the shadowLayer outside the Box
+
+    document.addEventListener('click', function(event) {
+        var NewMeasureBox = document.getElementById('NewMeasureBox');
+        if (event.target == shadowLayer) {
+            closeNewMeasureBox();
+        }
+    });
+
+    </script>
+
+    <!-- Funtion for entering "right now" date and time -->
+
+    <script>
+
+    document.getElementById("fillCurrentTime").addEventListener("click", fillCurrentTime);
+
+    function fillCurrentTime() {
+
+        const dateInput = document.getElementById("date");
+
+        // Create a new Date object for the current date and time in the device's local time zone
+        const currentDate = new Date();
+
+        // Get the current date and time components in the local time zone
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+        const day = String(currentDate.getDate()).padStart(2, "0");
+        const hours = String(currentDate.getHours()).padStart(2, "0");
+        const minutes = String(currentDate.getMinutes()).padStart(2, "0");
+
+        // Format the date as "YYYY-MM-DDTHH:mm"
+        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+        // Set the input value to the current date and time in the device's local time zone
+        dateInput.value = formattedDate;
+    }
+
+    </script>
+
+    <!-- Function for toggle on/off the edit "Lugar" button -->
+
+    <script>
+
+        function togglePlaceEdit() {
+
+            var placeInput = document.getElementById('place');
+
+            // Toggle readonly attribute
+            placeInput.readOnly = !placeInput.readOnly;
+
+            // Change background color to #ffffff when clicked
+            if (!placeInput.readOnly) {
+                placeInput.style.backgroundColor = '#FCD299';
+                placeInput.placeholder = 'Añade el nombre del lugar';
+            } else {
+                // Change background color back to its default when clicked back
+                placeInput.style.backgroundColor = ''; // Reset to default
+                placeInput.placeholder = 'Selecciona desde el mapa y edita si es necesario.';
+            }
+
+            // Change button from "Editar" to "Guardar" -->
+
+            const editButton = document.getElementById('editPlaceButton');
+
+            // Check if the button text is "Editar"
+            if (editButton.textContent.trim() === 'Editar') {
+                // Change button text to "Guardar"
+                editButton.textContent = 'Guardar';
+                editButton.style.backgroundColor = 'orange';
+                editButton.style.color = 'white';
+            } else {
+                // If the button text is not "Editar", change it back to "Editar"
+                editButton.textContent = 'Editar';
+                // Change button color back to its original state (you may set the default color here)
+                editButton.style.color = ''; // or set the default color
+                editButton.style.backgroundColor = '';
+            }
+        }
+
+    </script>
+
+    <!-- Function to eliminate previous map and open secondary map to select location -->
+
+    <script>
+
+        // Declare a global variable to track whether showSecondMap() has been called
+        var secondMapShown = false;
+
+        function destroyMap() {
+            // Check if the map exists and remove it
+            if (map !== null) {
+                map.remove();
+                map = null;
+            }
+        }
+
+        function showSecondMap() {
+
+            destroyMap(); // Call the destroyMap function before creating the new map
+
+            const map = createMapInstance([-3.7026, 40.4365], 13, 'main-map');
+
+            // Add geocoder controls to the map
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                marker: { color: '#06c726' },
+                placeholder: 'Buscar', // Add this line to set the placeholder
+                mapboxgl: mapboxgl
+            });
+
+            map.addControl(geocoder, 'top-left');
+
+            let blueMarker = null;
+
+            // Event listener for geocoder result
+            geocoder.on('result', function(e) {
+                updateInputFields(e.result.text, e.result.place_name, e.result.geometry.coordinates);
+            });
+
+            // Event listener for map click
+            map.on('click', function (e) {
+                updateInputFields(null, null, e.lngLat.toArray());
+
+                // Remove the previous blue marker if it exists
+                if (blueMarker) {
+                    blueMarker.remove();
+                }
+
+                // Create a blue marker at the clicked location
+                blueMarker = new mapboxgl.Marker({ color: '#0000FF' })
+                    .setLngLat(e.lngLat)
+                    .addTo(map);
+            });
+
+            // Add markers to secondary map.
+            addMarkersToMap(map);
+
+            // Set the variable to true once showSecondMap() has been called
+            secondMapShown = true;
+
+            // Hide Box and Shadow Layer.
+            closeNewMeasureBox();
+
+        }
+
+        function confirmAddress() {
+
+            var infoBox = document.getElementById('infoBox');
+            var NewMeasureBox = document.getElementById('NewMeasureBox');
+            var shadowLayer = document.getElementById('shadowLayer');
+
+            NewMeasureBox.style.display = 'block';
+            shadowLayer.style.display = 'block';
+            infoBox.style.display = 'none';
+
+        }
+
+    </script>
+
+    <!-- Functions to get current location and update Input fields -->
+
+    <script>
+
+        function updateLocation() {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const currentLocation = {
+                        lng: position.coords.longitude,
+                        lat: position.coords.latitude
+                    };
+
+                    updateInputFields(null, null, [currentLocation.lng, currentLocation.lat]);
+                },
+                function(error) {
+                    // Log detailed error information
+                    console.error('Error getting location:', error);
+                    console.error('Error code:', error.code);
+                    console.error('Error message:', error.message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+
+        function updateInputFields(place, address, coordinates) {
+            const placeInput = document.getElementById('place');
+            const addressInput = document.getElementById('address');
+            const placeInput2 = document.getElementById('place2'); // Added line
+            const addressInput2 = document.getElementById('address2'); // Added line
+
+            if (place !== null && address !== null) {
+                // Set the value of the input fields with the provided place and address
+                placeInput.value = place;
+                addressInput.value = address;
+                placeInput2.value = place; // Added line
+                addressInput2.value = address; // Added line
+            } else {
+                // Fetch reverse geocoding if place and address are not provided
+                const reverseGeocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coordinates[0]},${coordinates[1]}.json?access_token=${mapboxgl.accessToken}`;
+                fetch(reverseGeocodeUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        placeInput.value = data.features[0].text;
+                        addressInput.value = data.features[0].place_name;
+                        placeInput2.value = data.features[0].text; // Added line
+                        addressInput2.value = data.features[0].place_name; // Added line
+                    })
+                    .catch(error => console.log(error));
+            }
+        }
+
+
+    </script>
+
+    <!-- Make infoBox draggable -->
+
+    <script>
+
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+            if (document.getElementById(element.id)) {
+                document.getElementById(element.id).onmousedown = dragMouseDown;
+                document.getElementById(element.id).addEventListener('touchstart', touchStart);
+            } else {
+                element.onmousedown = dragMouseDown;
+                element.addEventListener('touchstart', touchStart);
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+
+                updateElementPosition();
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+
+            function touchStart(e) {
+                e.preventDefault();
+                var touch = e.touches[0];
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+
+                element.addEventListener('touchmove', touchMove);
+                element.addEventListener('touchend', closeDragElement);
+            }
+
+            function touchMove(e) {
+                e.preventDefault();
+                var touch = e.touches[0];
+                pos1 = pos3 - touch.clientX;
+                pos2 = pos4 - touch.clientY;
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+
+                updateElementPosition();
+            }
+
+            function updateElementPosition() {
+                let newTop = element.offsetTop - pos2;
+                let newLeft = element.offsetLeft - pos1;
+
+                // Check if the new position is within the viewport boundaries
+                if (newTop >= 0 && newLeft >= 0 &&
+                    newTop + element.clientHeight <= window.innerHeight &&
+                    newLeft + element.clientWidth <= window.innerWidth) {
+                    element.style.top = newTop + "px";
+                    element.style.left = newLeft + "px";
+                }
+            }
+        }
+
+        makeDraggable(document.getElementById('infoBox'));
+
+        // Add event listener for window resize
+        window.addEventListener('resize', function () {
+            // Ensure the box stays within the viewport after window resize
+            let infoBox = document.getElementById('infoBox');
+            let newTop = infoBox.offsetTop;
+            let newLeft = infoBox.offsetLeft;
+
+            if (newTop + infoBox.clientHeight > window.innerHeight) {
+                newTop = window.innerHeight - infoBox.clientHeight;
+            }
+
+            if (newLeft + infoBox.clientWidth > window.innerWidth) {
+                newLeft = window.innerWidth - infoBox.clientWidth;
+            }
+
+            infoBox.style.top = newTop + 'px';
+            infoBox.style.left = newLeft + 'px';
+        });
+
+    </script>
+
+    <!-- Make confirm button actionable on mobile -->
+
+    <script>
+
+        document.getElementById("confirmPlace").addEventListener("touchstart", function() {
+            confirmAddress();
+        });
+
+    </script>
+
+</body>
+
+</html>
